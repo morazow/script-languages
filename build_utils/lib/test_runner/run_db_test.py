@@ -76,14 +76,14 @@ class RunDBTest(luigi.Task):
             language=language,
             tests=" ".join(self.tests_to_execute)
         )
-        cmd = 'python -tt %s' % args
+        cmd = 'cd /tests/test/; python -tt %s' % args
         still_running_logger = StillRunningLogger(self.logger, self.task_id,
                                                   "db tests of flavor %s and release %s in %s"
                                                   % (self.flavor_name, self.release_type, self.test_file))
         thread = StillRunningLoggerThread(still_running_logger)
         thread.start()
         environment = FrozenDictToDict().convert(self.environment)
-        exit_code, output = test_container.exec_run(cmd=cmd, workdir="/tests/test/",
+        exit_code, output = test_container.exec_run(cmd=cmd,
                                                     environment=environment)
         thread.stop()
         thread.join()
