@@ -35,11 +35,12 @@ class ExportContainerTask(StoppableTask):
 
     def _prepare_outputs(self):
         self._target = luigi.LocalTarget(
-            "%s/releases/%s/%s/%s"
+            "%s/releases/%s/%s"
             % (self._build_config.output_directory,
                flavor.get_name_from_path(self.flavor_path),
-               self.get_release_type().name,
-               datetime.now().strftime('%Y_%m_%d_%H_%M_%S')))
+               self.get_release_type().name
+               # datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+               ))
         if self._target.exists():
             self._target.remove()
 
@@ -80,16 +81,17 @@ class ExportContainerTask(StoppableTask):
 
     def write_release_info(self, image_info_of_release_image: ImageInfo, is_new: bool,
                            release_file: pathlib.Path, release_name: str):
+        release_info = ReleaseInfo(
+            path=str(release_file),
+            complete_name=release_name,
+            name=flavor.get_name_from_path(self.flavor_path),
+            hash=image_info_of_release_image.hash,
+            is_new=is_new,
+            depends_on_image=image_info_of_release_image,
+            release_type=self.get_release_type())
+        json = release_info.to_json()
         with self.output()[RELEASE_INFO].open("w") as file:
-            release_info = ReleaseInfo(
-                path=str(release_file),
-                complete_name=release_name,
-                name=flavor.get_name_from_path(self.flavor_path),
-                hash=image_info_of_release_image.hash,
-                is_new=is_new,
-                depends_on_image=image_info_of_release_image,
-                release_type=self.get_release_type())
-            file.write(release_info.to_json())
+            file.write(json)
 
     def create_release(self, release_image_name: str, release_file: str):
         self.logger.info("Task %s: Create container file %s", self.task_id, release_file)
