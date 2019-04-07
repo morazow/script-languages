@@ -35,7 +35,6 @@ class ExportContainerTask(StoppableTask):
         self._prepare_outputs()
 
     def _prepare_outputs(self):
-        self.logger.info("ExportContainerTask._prepare_outputs")
         self._target = luigi.LocalTarget(
             "%s/release_info/%s/%s"
             % (self._build_config.output_directory,
@@ -44,7 +43,6 @@ class ExportContainerTask(StoppableTask):
                # datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
                ))
         if self._target.exists():
-            self.logger.info("ExportContainerTask._prepare_outputs, target exisits, remove")
             self._target.remove()
 
     def output(self):
@@ -93,13 +91,6 @@ class ExportContainerTask(StoppableTask):
             depends_on_image=image_info_of_release_image,
             release_type=self.get_release_type())
         json = release_info.to_json()
-        cmd = "ls -R %s" % pathlib.Path(self._build_config.output_directory).absolute()
-        run = subprocess.run(cmd.split(" "))
-        self.logger.info("ExportContainerTask run ls %s", run.stdout)
-        self.logger.info("ExportContainerTask is file of .build_ouput/releases %s"
-                         % pathlib.Path(".build_ouput/releases").is_file())
-        self.logger.info("ExportContainerTask is dir of .build_ouput/releases %s"
-                         % pathlib.Path(".build_ouput/releases").is_dir())
         with self.output()[RELEASE_INFO].open("w") as file:
             file.write(json)
 
@@ -114,8 +105,7 @@ class ExportContainerTask(StoppableTask):
             self.modify_extracted_container(extract_dir)
             self.pack_release_file(log_path, extract_dir, release_file)
         finally:
-            # shutil.rmtree(temp_directory)
-            pass
+            shutil.rmtree(temp_directory)
 
     def create_and_export_container(self, release_image_name: str, temp_directory: str):
         self.logger.info("Task %s: Export container %s", self.task_id, release_image_name)
@@ -173,7 +163,6 @@ class ExportContainerTask(StoppableTask):
         return log_dir
 
     def run_command(self, command: str, description: str, log_file_path: pathlib.Path):
-        self.logger.info("ExportContainerTask command %s" % command)
         with subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT) as process:
             with CommandLogHandler(log_file_path, self.logger, self.task_id, description) as log_handler:
