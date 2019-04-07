@@ -20,6 +20,7 @@ from build_utils.lib.data.release_info import ReleaseInfo
 from build_utils.lib.docker_config import docker_config
 from build_utils.lib.flavor import flavor
 from build_utils.lib.still_running_logger import StillRunningLogger
+from build_utils.lib.test_runner.create_release_directory import CreateReleaseDirectory
 from build_utils.stoppable_task import StoppableTask
 from build_utils.release_type import ReleaseType
 
@@ -49,7 +50,8 @@ class ExportContainerTask(StoppableTask):
         return {RELEASE_INFO: self._target}
 
     def requires(self):
-        return self.get_release_task(self.flavor_path)
+        return {"release_task": self.get_release_task(self.flavor_path),
+                "releases_directory": CreateReleaseDirectory()}
 
     def get_release_task(self, flavor_path):
         pass
@@ -58,10 +60,10 @@ class ExportContainerTask(StoppableTask):
         pass
 
     def run_task(self):
-        image_info_of_release_image = DependencyImageInfoCollector().get_from_sinlge_input(self.input())
+        image_infos = DependencyImageInfoCollector().get_from_dict_of_inputs(self.input())
+        image_info_of_release_image = image_infos["release_task"]
         release_image_name = image_info_of_release_image.complete_name
-        release_path = pathlib.Path(self._build_config.output_directory).joinpath("releases")
-        release_path.mkdir(parents=True, exist_ok=True)
+        release_path = pathlib.Path(self.get_release_directory()).absolute()
         release_name = f"""{image_info_of_release_image.tag}-{image_info_of_release_image.hash}"""
         release_file = release_path.joinpath(release_name + ".tar.gz").absolute()
         self.remove_release_file_if_requested(release_file)
@@ -72,6 +74,9 @@ class ExportContainerTask(StoppableTask):
             is_new = True
 
         self.write_release_info(image_info_of_release_image, is_new, release_file, release_name)
+
+    def get_release_directory(self):
+        return pathlib.Path(self.input()["releases_directory"].path).absolute().parent
 
     def remove_release_file_if_requested(self, release_file):
         if release_file.exists() and \
@@ -168,7 +173,7 @@ class ExportContainerTask(StoppableTask):
             with CommandLogHandler(log_file_path, self.logger, self.task_id, description) as log_handler:
                 still_running_logger = StillRunningLogger(
                     self.logger, self.task_id, description)
-                log_handler.handle_log_line((command+"\n").encode("utf-8"))
+                log_handler.handle_log_line((command + "\n").encode("utf-8"))
                 for line in iter(process.stdout.readline, b''):
                     still_running_logger.log()
                     log_handler.handle_log_line(line)
