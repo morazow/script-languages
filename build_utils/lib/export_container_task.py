@@ -34,6 +34,7 @@ class ExportContainerTask(StoppableTask):
         self._prepare_outputs()
 
     def _prepare_outputs(self):
+        print("ExportContainerTask._prepare_outputs")
         self._target = luigi.LocalTarget(
             "%s/releases/%s/%s"
             % (self._build_config.output_directory,
@@ -42,6 +43,7 @@ class ExportContainerTask(StoppableTask):
                # datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
                ))
         if self._target.exists():
+            print("ExportContainerTask._prepare_outputs","target exisits, remove")
             self._target.remove()
 
     def output(self):
@@ -90,6 +92,8 @@ class ExportContainerTask(StoppableTask):
             depends_on_image=image_info_of_release_image,
             release_type=self.get_release_type())
         json = release_info.to_json()
+        run=subprocess.run("ls -R %s"%pathlib.Path(self.output()[RELEASE_INFO].path).parent.parent)
+        print("ExportContainerTask run ls",run.stdout)
         with self.output()[RELEASE_INFO].open("w") as file:
             file.write(json)
 
