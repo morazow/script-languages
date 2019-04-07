@@ -36,7 +36,7 @@ class ExportContainerTask(StoppableTask):
     def _prepare_outputs(self):
         self.logger.info("ExportContainerTask._prepare_outputs")
         self._target = luigi.LocalTarget(
-            "%s/releases/%s/%s"
+            "%s/release_info/%s/%s"
             % (self._build_config.output_directory,
                flavor.get_name_from_path(self.flavor_path),
                self.get_release_type().name
@@ -104,7 +104,7 @@ class ExportContainerTask(StoppableTask):
 
     def create_release(self, release_image_name: str, release_file: str):
         self.logger.info("Task %s: Create container file %s", self.task_id, release_file)
-        temp_directory = tempfile.mkdtemp(prefix="release_archive",
+        temp_directory = tempfile.mkdtemp(prefix="release_archive_",
                                           dir=self._build_config.temporary_base_directory)
         try:
             log_path = self.prepare_log_dir(release_image_name)
@@ -140,8 +140,8 @@ class ExportContainerTask(StoppableTask):
 
     def pack_release_file(self, log_path: pathlib.Path, extract_dir: str, release_file: str):
         self.logger.info("Task %s: Pack container file %s", self.task_id, release_file)
-        extract_content = " ".join(os.listdir(extract_dir))
-        command = f"""tar -C {extract_dir} -cvzf {release_file} {extract_content}"""
+        extract_content = " ".join("'%s'" % file for file in os.listdir(extract_dir))
+        command = f"""tar -C '{extract_dir}' -cvzf '{release_file}' {extract_content}"""
         self.run_command(command, "packing container file %s" % release_file,
                          log_path.joinpath("pack_release_file.log"))
 
@@ -155,7 +155,7 @@ class ExportContainerTask(StoppableTask):
         os.makedirs(extract_dir)
         excludes = " ".join(
             ["--exclude=%s" % dir for dir in ["dev/*", "proc/*", "etc/resolv.conf", "etc/hosts"]])
-        self.run_command(f"""tar {excludes} -xvf {export_file} -C {extract_dir}""",
+        self.run_command(f"""tar {excludes} -xvf '{export_file}'' -C '{extract_dir}'""",
                          "extracting exported container %s" % export_file,
                          log_path.joinpath("extract_release_file.log"))
         return extract_dir
