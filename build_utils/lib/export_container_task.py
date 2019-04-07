@@ -63,7 +63,7 @@ class ExportContainerTask(StoppableTask):
         release_path = pathlib.Path(self._build_config.output_directory).joinpath("releases")
         release_path.mkdir(parents=True, exist_ok=True)
         release_name = f"""{image_info_of_release_image.tag}-{image_info_of_release_image.hash}"""
-        release_file = release_path.joinpath(release_name + ".tar.gz")
+        release_file = release_path.joinpath(release_name + ".tar.gz").absolute()
         self.remove_release_file_if_requested(release_file)
 
         is_new = False
