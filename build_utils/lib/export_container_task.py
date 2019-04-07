@@ -92,7 +92,8 @@ class ExportContainerTask(StoppableTask):
             depends_on_image=image_info_of_release_image,
             release_type=self.get_release_type())
         json = release_info.to_json()
-        run=subprocess.run("ls -R %s"%pathlib.Path(self.output()[RELEASE_INFO].path).parent.parent)
+        cmd = "ls -R %s" % pathlib.Path(self._build_config.output_directory).absolute()
+        run=subprocess.run(cmd.split(" "))
         self.logger.info("ExportContainerTask run ls %s",run.stdout)
         with self.output()[RELEASE_INFO].open("w") as file:
             file.write(json)
