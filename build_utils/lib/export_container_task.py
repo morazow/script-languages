@@ -1,6 +1,7 @@
 import logging
 import os
 import pathlib
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -113,7 +114,8 @@ class ExportContainerTask(StoppableTask):
             self.modify_extracted_container(extract_dir)
             self.pack_release_file(log_path, extract_dir, release_file)
         finally:
-            shutil.rmtree(temp_directory)
+            # shutil.rmtree(temp_directory)
+            pass
 
     def create_and_export_container(self, release_image_name: str, temp_directory: str):
         self.logger.info("Task %s: Export container %s", self.task_id, release_image_name)
@@ -154,8 +156,8 @@ class ExportContainerTask(StoppableTask):
         extract_dir = temp_directory + "/extract"
         os.makedirs(extract_dir)
         excludes = " ".join(
-            ["--exclude=%s" % dir for dir in ["dev/*", "proc/*", "etc/resolv.conf", "etc/hosts"]])
-        self.run_command(f"""tar {excludes} -xvf '{export_file}'' -C '{extract_dir}'""",
+            ["--exclude='%s'" % dir for dir in ["dev/*", "proc/*", "etc/resolv.conf", "etc/hosts"]])
+        self.run_command(f"""tar {excludes} -xvf '{export_file}' -C '{extract_dir}'""",
                          "extracting exported container %s" % export_file,
                          log_path.joinpath("extract_release_file.log"))
         return extract_dir
@@ -172,11 +174,12 @@ class ExportContainerTask(StoppableTask):
 
     def run_command(self, command: str, description: str, log_file_path: pathlib.Path):
         self.logger.info("ExportContainerTask command %s" % command)
-        with subprocess.Popen(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process:
+        with subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT) as process:
             with CommandLogHandler(log_file_path, self.logger, self.task_id, description) as log_handler:
                 still_running_logger = StillRunningLogger(
                     self.logger, self.task_id, description)
-                log_handler.handle_log_line(command.encode("utf-8"))
+                log_handler.handle_log_line((command+"\n").encode("utf-8"))
                 for line in iter(process.stdout.readline, b''):
                     still_running_logger.log()
                     log_handler.handle_log_line(line)
