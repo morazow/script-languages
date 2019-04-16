@@ -29,7 +29,8 @@ class DockerPullOrBuildImageTask(StoppableTask):
         self._dockerfile = self.get_dockerfile()
         self._prepare_outputs()
         self._build_context_hasher = \
-            BuildContextHasher(self._mapping_of_build_files_and_directories,
+            BuildContextHasher(self.task_id,
+                               self._mapping_of_build_files_and_directories,
                                self._dockerfile)
         self._image_builder = \
             DockerImageBuilder(
