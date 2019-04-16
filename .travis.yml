@@ -11,5 +11,6 @@ install:
   - sudo pip install pipenv
 
 script:
+  - docker pull tkilias/script-language-container:test-flavor-build_deps_J4NDPRNUL6HAAYDXURJ354554YJAC7A6AOGMYIZI5OPGFQSYNCTQ
+  - docker pull tkilias/script-language-container:test-flavor-udfclient_deps_KVGUQB6OLJF5Y6WUKVS2O77TMQZHYODZJKDLT3TIMSA3LDLZMUSA
   - ./exaslct run-db-test --flavor-path exaslct_src/test/resources/test-flavor/ --release-type Release --workers 5 --docker-repository-name tkilias/script-language-container
-
