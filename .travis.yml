@@ -11,4 +11,4 @@ install:
   - sudo pip install pipenv
 
 script:
-  - ./exaslct run-db-test --flavor-path exaslct_src/test/resources/test-flavor/ --release-type Release --workers 5 --docker-repository-name tkilias/script-language-container
+  - ./exaslct run-db-test --flavor-path exaslct_src/test/resources/test-flavor/ --release-type Release --workers 5 --docker-repository-name docker.io/tkilias/script-language-container
