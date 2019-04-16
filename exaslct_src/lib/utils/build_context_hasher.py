@@ -23,7 +23,7 @@ class BuildContextHasher:
             FileDirectoryListHasher(hashfunc="sha256",
                                     hash_file_names=True,
                                     hash_directory_names=True,
-                                    hash_permissions=True)
+                                    hash_permissions=False)
         files_directories_to_hash = list(self.build_directories_mapping.values()) + [str(self.dockerfile)]
         print(self.task_id,"files_directories_list_hasher", files_directories_to_hash)
         hash_of_build_context = files_directories_list_hasher.hash(files_directories_to_hash)
